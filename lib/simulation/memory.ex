@@ -8,7 +8,7 @@ defmodule Simulation.Memory do
   @cache_disabled 0b10000
 
   def run() do
-    run([0,4,1,4,2,4,3,4,2,4,0,4,1,4,2,4,3,4], 3, 5, 1024)
+    run([0, 4, 1, 4, 2, 4, 3, 4, 2, 4, 0, 4, 1, 4, 2, 4, 3, 4], 3, 5, 1024)
   end
 
   def run(reference_list, memory_size, virtual_size, page_size) do
@@ -82,10 +82,12 @@ defmodule Simulation.Memory do
       memory_free_index ->
         queue = Qex.push(queue, memory_free_index)
         memory = List.replace_at(memory, memory_free_index, reference)
+
         page_table =
           page_table
           |> set_frame_number(reference, memory_free_index)
           |> set_bits(reference, @present, frame_bits)
+
         {page_table, memory, queue}
     end
   end
@@ -96,6 +98,7 @@ defmodule Simulation.Memory do
     IO.puts("\t\tQueue: #{inspect(queue)}")
     print_memory(memory)
   end
+
   def print_page_table(page_table, reference) do
     IO.puts("\n\tPage Table")
 
@@ -106,6 +109,7 @@ defmodule Simulation.Memory do
 
   def print_memory(memory) do
     IO.puts("\n\tMemory")
+
     Enum.with_index(memory, fn x, i ->
       IO.puts("\t\tMemory[#{i}]: #{x} ")
     end)
