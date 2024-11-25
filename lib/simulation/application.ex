@@ -9,7 +9,7 @@ defmodule Simulation.Application do
   def start(_type, _args) do
     children = [
       # Starts a worker by calling: Simulation.Worker.start_link(arg)
-      # {Simulation.Worker, arg}
+      {Simulation.Worker, :initial_state}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
