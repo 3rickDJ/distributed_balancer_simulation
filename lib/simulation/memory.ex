@@ -64,7 +64,7 @@ defmodule Simulation.Memory do
     end
   end
 
-  def replace_page(page_table, reference, memory, queue, frame_bits, page_bits) do
+  defp replace_page(page_table, reference, memory, queue, frame_bits, page_bits) do
     case Enum.find_index(memory, fn x -> x == -1 end) do
       nil ->
         {{:value, oldest_memory_frame_index}, queue} = Qex.pop(queue)
@@ -75,6 +75,7 @@ defmodule Simulation.Memory do
         page_table =
           page_table
           |> List.replace_at(old_page_index, 0)
+          |> List.replace_at(reference, oldest_memory_frame_index)
           |> set_bits(reference, @present, frame_bits)
 
         {page_table, memory, queue}
@@ -92,24 +93,35 @@ defmodule Simulation.Memory do
     end
   end
 
-  def print_log(reference, page_table, memory, queue, control_bits, frame_bits, page_bits, offset_bits) do
-    IO.puts("Reference: #{reference} | #{Integer.to_string(reference, 2)}")
+  defp print_log(reference, page_table, memory, queue, control_bits, frame_bits, page_bits, offset_bits) do
+    IO.puts("\n\nReference: #{reference} | #{Integer.to_string(reference, 2)}")
     print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits)
-    # print_page_table(page_table, reference)
-    # IO.puts("\t\tQueue: #{inspect(queue)}")
-    # print_memory(memory)
+    print_page_table(page_table, reference)
+    IO.puts("\t\tQueue: #{inspect(queue)}")
+    print_memory(memory)
   end
 
-  def print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits) do
+  defp print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits) do
     virtual_addr = reference <<< offset_bits
     physical_addr = Enum.at(page_table, reference) |> Bitwise.band((1 <<< frame_bits)-1) |> Bitwise.bsl(offset_bits)
 
-    IO.puts("\tVirtual  Address: #{virtual_addr} | #{Integer.to_string(virtual_addr, 2)}")
-    IO.puts("\tPhysical Address: #{physical_addr} | #{Integer.to_string(physical_addr, 2)}")
+    IO.puts("\tVirtual  Address: #{virtual_addr} | #{underscore_binary(virtual_addr, offset_bits)}")
+    IO.puts("\tPhysical Address: #{physical_addr} | #{underscore_binary(physical_addr, offset_bits)}")
+    # IO.puts("\tPhysical Address: #{physical_addr} | #{Integer.to_string(physical_addr, 2)}")
+  end
+
+  defp underscore_binary(binary, offset_bits) do
+    binary
+    |> Integer.to_string(2)
+    |> String.reverse()
+    |> String.split("", trim: true)
+    |> Enum.chunk_every(offset_bits)
+    |> Enum.join("_")
+    |> String.reverse()
   end
 
 
-  def print_page_table(page_table, reference) do
+  defp print_page_table(page_table, reference) do
     IO.puts("\n\tPage Table")
 
     Enum.with_index(page_table, fn x, i ->
@@ -117,7 +129,7 @@ defmodule Simulation.Memory do
     end)
   end
 
-  def print_memory(memory) do
+  defp print_memory(memory) do
     IO.puts("\n\tMemory")
 
     Enum.with_index(memory, fn x, i ->
@@ -129,7 +141,7 @@ defmodule Simulation.Memory do
     Enum.at(page_table, page) |> Bitwise.bsr(frame_bits) |> Bitwise.band(@present) |> Kernel.!=(0)
   end
 
-  def set_frame_number(page_table, page_index, frame_number) do
+  defp set_frame_number(page_table, page_index, frame_number) do
     page_table
     |> List.update_at(page_index, fn x -> x ||| frame_number end)
   end
