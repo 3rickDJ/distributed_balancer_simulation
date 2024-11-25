@@ -1,11 +1,11 @@
 defmodule Simulation.Memory do
-  use Bitwise
+  import Bitwise
   @control_bits 5
   @present 0b00001
-  @protection 0b00010
-  @modified 0b00100
+  # @protection 0b00010
+  # @modified 0b00100
   @reference 0b01000
-  @cache_disabled 0b10000
+  # @cache_disabled 0b10000
 
   def run() do
     run([0, 4, 1, 4, 2, 4, 3, 4, 2, 4, 0, 4, 1, 4, 2, 4, 3, 4], 3, 5, 1024)
@@ -93,20 +93,20 @@ defmodule Simulation.Memory do
     end
   end
 
-  defp print_log(reference, page_table, memory, queue, control_bits, frame_bits, page_bits, offset_bits) do
-    IO.puts("\n\nReference: #{reference} | #{Integer.to_string(reference, 2)}")
+  defp print_log(reference, page_table, _memory, _queue, control_bits, frame_bits, page_bits, offset_bits) do
+    IO.puts("\n\nReference: #{reference}")
     print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits)
-    print_page_table(page_table, reference)
-    IO.puts("\t\tQueue: #{inspect(queue)}")
-    print_memory(memory)
+    # print_page_table(page_table, reference)
+    # IO.puts("\t\tQueue: #{inspect(queue)}")
+    # print_memory(memory)
   end
 
   defp print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits) do
     virtual_addr = reference <<< offset_bits
     physical_addr = Enum.at(page_table, reference) |> Bitwise.band((1 <<< frame_bits)-1) |> Bitwise.bsl(offset_bits)
 
-    IO.puts("\tVirtual  Address: #{virtual_addr} | #{underscore_binary(virtual_addr, offset_bits)}")
-    IO.puts("\tPhysical Address: #{physical_addr} | #{underscore_binary(physical_addr, offset_bits)}")
+    IO.puts("\tVirtual  Address: #{virtual_addr} | 0b #{underscore_binary(virtual_addr, offset_bits)}")
+    IO.puts("\tPhysical Address: #{physical_addr} | 0b #{underscore_binary(physical_addr, offset_bits)}")
     # IO.puts("\tPhysical Address: #{physical_addr} | #{Integer.to_string(physical_addr, 2)}")
   end
 
