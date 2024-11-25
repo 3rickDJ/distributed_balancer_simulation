@@ -59,7 +59,7 @@ defmodule Simulation.Memory do
               {page_table, memory, queue}
           end
 
-        print_log(reference, page_table, memory)
+        print_log(reference, page_table, memory, queue)
         process_reference(rest, memory, page_table, queue, offset_bits, frame_bits, page_bits)
     end
   end
@@ -69,11 +69,12 @@ defmodule Simulation.Memory do
       nil ->
         {{:value, oldest_memory_frame_index}, queue} = Qex.pop(queue)
         queue = Qex.push(queue, oldest_memory_frame_index)
+        old_page_index = Enum.at(memory, oldest_memory_frame_index)
         memory = List.replace_at(memory, oldest_memory_frame_index, reference)
 
         page_table =
           page_table
-          |> List.replace_at(oldest_memory_frame_index, 0)
+          |> List.replace_at(old_page_index, 0)
           |> set_bits(reference, @present, frame_bits)
 
         {page_table, memory, queue}
@@ -89,23 +90,24 @@ defmodule Simulation.Memory do
     end
   end
 
-  def print_log(reference, page_table, memory) do
+  def print_log(reference, page_table, memory, queue) do
     IO.puts("Reference: #{reference} #{Integer.to_string(reference, 2)}")
     print_page_table(page_table, reference)
+    IO.puts("\t\tQueue: #{inspect(queue)}")
     print_memory(memory)
   end
   def print_page_table(page_table, reference) do
     IO.puts("\n\tPage Table")
 
-    Enum.each(page_table, fn x ->
-      IO.puts("\t\tPage: #{Integer.to_string(x, 2)} ")
+    Enum.with_index(page_table, fn x, i ->
+      IO.puts("\t\tPage[#{i}]: #{Integer.to_string(x, 2)} ")
     end)
   end
 
   def print_memory(memory) do
     IO.puts("\n\tMemory")
-    Enum.each(memory, fn x ->
-      IO.puts("\t\tMemory: #{Integer.to_string(x, 2)} ")
+    Enum.with_index(memory, fn x, i ->
+      IO.puts("\t\tMemory[#{i}]: #{x} ")
     end)
   end
 
