@@ -11,6 +11,11 @@ defmodule Simulation.Memory do
     run([0, 4, 1, 4, 2, 4, 3, 4, 2, 4, 0, 4, 1, 4, 2, 4, 3, 4], 3, 5, 1024)
   end
 
+  def run(reference_list) do
+    run(reference_list, 3, 5, 1024)
+  end
+
+
   def run(reference_list, memory_size, virtual_size, page_size) do
     memory = Enum.map(0..(memory_size - 1), fn _ -> -1 end)
     page_table = Enum.map(0..(virtual_size - 1), fn _ -> 0 end)
