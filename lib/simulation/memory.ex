@@ -59,7 +59,7 @@ defmodule Simulation.Memory do
               {page_table, memory, queue}
           end
 
-        print_log(reference, page_table, memory, queue)
+        print_log(reference, page_table, memory, queue, @control_bits, frame_bits, page_bits, offset_bits)
         process_reference(rest, memory, page_table, queue, offset_bits, frame_bits, page_bits)
     end
   end
@@ -92,12 +92,22 @@ defmodule Simulation.Memory do
     end
   end
 
-  def print_log(reference, page_table, memory, queue) do
-    IO.puts("Reference: #{reference} #{Integer.to_string(reference, 2)}")
-    print_page_table(page_table, reference)
-    IO.puts("\t\tQueue: #{inspect(queue)}")
-    print_memory(memory)
+  def print_log(reference, page_table, memory, queue, control_bits, frame_bits, page_bits, offset_bits) do
+    IO.puts("Reference: #{reference} | #{Integer.to_string(reference, 2)}")
+    print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits)
+    # print_page_table(page_table, reference)
+    # IO.puts("\t\tQueue: #{inspect(queue)}")
+    # print_memory(memory)
   end
+
+  def print_virtual_physical_address(reference, page_table, control_bits, frame_bits, page_bits, offset_bits) do
+    virtual_addr = reference <<< offset_bits
+    physical_addr = Enum.at(page_table, reference) |> Bitwise.band((1 <<< frame_bits)-1) |> Bitwise.bsl(offset_bits)
+
+    IO.puts("\tVirtual  Address: #{virtual_addr} | #{Integer.to_string(virtual_addr, 2)}")
+    IO.puts("\tPhysical Address: #{physical_addr} | #{Integer.to_string(physical_addr, 2)}")
+  end
+
 
   def print_page_table(page_table, reference) do
     IO.puts("\n\tPage Table")
