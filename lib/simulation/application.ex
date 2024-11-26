@@ -9,7 +9,7 @@ defmodule Simulation.Application do
   def start(_type, _args) do
     topologies = [
       example: [
-        strategy: Cluster.Strategy.Epmd,
+        strategy: Cluster.Strategy.Gossip,
         config: [
           hosts: [
             :"a@macerick", :"a2@macerick", :"b@e-pc"
