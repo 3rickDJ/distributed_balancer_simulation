@@ -7,7 +7,18 @@ defmodule Simulation.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = [
+      example: [
+        strategy: Cluster.Strategy.Epmd,
+        config: [
+          hosts: [
+            :"a@macerick", :"a2@macerick", :"b@e-pc"
+          ]
+        ]
+      ]
+    ]
     children = [
+      {Cluster.Supervisor, [topologies, [name: Simulation.ClusterSupervisor]]},
       # Starts a worker by calling: Simulation.Worker.start_link(arg)
       {Simulation.Worker, :initial_state}
     ]
