@@ -10,11 +10,12 @@ defmodule Simulation.Application do
     topologies = [
       example: [
         strategy: Cluster.Strategy.Gossip,
-        # config: [
+        config: [
         #   hosts: [
         #     :"a@macerick", :"a2@macerick", :"b@e-pc"
         #   ]
-        # ]
+        secret: "2"
+        ]
       ]
     ]
     children = [
