@@ -7,14 +7,18 @@ defmodule Simulation.Memory do
   @reference 0b01000
   # @cache_disabled 0b10000
 
+
   def run() do
     run([0, 4, 1, 4, 2, 4, 3, 4, 2, 4, 0, 4, 1, 4, 2, 4, 3, 4], 3, 5, 1024)
+  end
+
+  def run(%Simulation.Program{} = program) do
+    run(program.references, program.frames, program.pages, program.page_size)
   end
 
   def run(reference_list) do
     run(reference_list, 3, 5, 1024)
   end
-
 
   def run(reference_list, memory_size, virtual_size, page_size) do
     memory = Enum.map(0..(memory_size - 1), fn _ -> -1 end)
@@ -45,6 +49,7 @@ defmodule Simulation.Memory do
          frame_bits,
          page_bits
        ) do
+    :timer.sleep(1000)
     case reference_list do
       [] ->
         nil
@@ -69,7 +74,7 @@ defmodule Simulation.Memory do
     end
   end
 
-  defp replace_page(page_table, reference, memory, queue, frame_bits, page_bits) do
+  defp replace_page(page_table, reference, memory, queue, frame_bits, _page_bits) do
     case Enum.find_index(memory, fn x -> x == -1 end) do
       nil ->
         {{:value, oldest_memory_frame_index}, queue} = Qex.pop(queue)
