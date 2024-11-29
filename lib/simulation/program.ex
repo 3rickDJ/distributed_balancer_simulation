@@ -3,7 +3,8 @@ defmodule Simulation.Program do
             frames: 3,
             pages: 5,
             page_size: 1024,
-            name: "Generic Program"
+            name: "Generic Program",
+            from_node: Node.self()
 
   def new() do
     %__MODULE__{}
@@ -12,6 +13,7 @@ defmodule Simulation.Program do
   def new(name, references, frames, pages, page_size) do
     %__MODULE__{
       name: "#{name}:#{Node.self()}",
+      from_node: Node.self(),
       references: references,
       frames: frames,
       pages: pages,

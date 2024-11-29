@@ -117,6 +117,8 @@ defmodule Simulation.Worker do
           spawn(fn ->
             Memory.run(program)
             send(__MODULE__, {:task_done, program})
+            %{from_node: node} = program
+            send({__MODULE__, node}, {:task_done, Node.self, program})
           end)
 
           {:noreply, new_state}
@@ -135,6 +137,12 @@ defmodule Simulation.Worker do
     workload = state.workload - Enum.count(program.references)
     state = %{state | status: :free, workload: workload}
     send(__MODULE__, {:check_queue})
+    {:noreply, state}
+  end
+
+  def handle_info({:task_done, from, %Program{} = program}, state) do
+    Logger.info("Task done for program: #{program.name} from: #{inspect(from)}")
+    Logger.debug("Task done for program: #{inspect(program)}")
     {:noreply, state}
   end
 end
