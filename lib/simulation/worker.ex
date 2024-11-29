@@ -6,9 +6,14 @@ defmodule Simulation.Worker do
   require Logger
 
   # Client API
-  def start_link(_initial_state) do
-    state = %{status: :free, queue: Qex.new(), program: nil, workload: 0}
+  def start_link(state) do
+    # state = %{status: :free, queue: Qex.new(), program: nil, workload: 0}
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
+  end
+
+  def init(_init_arg) do
+    state = %{status: :free, queue: Qex.new(), program: nil, workload: 0}
+    {:ok, state}
   end
 
   def call_nodes() do
