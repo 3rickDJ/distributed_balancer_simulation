@@ -26,15 +26,15 @@ defmodule Simulation.Worker do
     GenServer.call(__MODULE__, :get_state)
   end
 
-  def append_work(name, references, frames, pages, page_size) do
-    program = Program.new(name, references, frames, pages, page_size)
-    append_work(program)
-  end
-
   def force_append_work(name, references, frames, pages, page_size) do
     program = Program.new(name, references, frames, pages, page_size)
     Logger.debug("Forcing work: #{inspect(program)}")
     GenServer.cast(__MODULE__, {:schedule_force, program})
+  end
+
+  def append_work(name, references, frames, pages, page_size) do
+    program = Program.new(name, references, frames, pages, page_size)
+    append_work(program)
   end
 
   defp append_work(%Program{} = program) do
@@ -61,7 +61,7 @@ defmodule Simulation.Worker do
     {:noreply, new_state}
   end
 
-  def handle_cast({:schedule, %Program{} = program}, state) do
+  def handle_cast({:schedule, %Program{} = program}, %{workload: workload} = state) do
     Logger.debug("Scheduling program: #{inspect(program)}")
     nodes = Node.list()
     Logger.debug("Checking for lazy node on these #{inspect(nodes)}")
@@ -75,11 +75,12 @@ defmodule Simulation.Worker do
 
     lazy_node =
       success
-      |> Enum.concat([{Node.self, state}])
-      |> Enum.sort_by(fn {_, %{workload: workload}} -> workload end)
-      |> Enum.map(fn e ->
-        Logger.debug("Node: #{inspect(e)}")
-        e
+      |> Enum.sort(fn {k1, %{workload: workload1}}, {k2, %{workload: workload2}} ->
+        if workload1 == workload2 do
+          k1 >= k2
+        else
+          workload1 <= workload2
+        end
       end)
       |> Enum.map(fn {from, %{workload: workload}} -> {from, workload} end)
       |> Enum.map(fn e ->
@@ -87,7 +88,12 @@ defmodule Simulation.Worker do
         e
       end)
       |> Enum.at(0)
-      |> Kernel.elem(0)
+
+    lazy_node = if elem(lazy_node, 1) >= workload do
+      Node.self()
+    else
+      elem(lazy_node, 0)
+    end
 
     Logger.debug("Lazy node: #{inspect(lazy_node)}")
     Logger.debug("Lazy node is the same one: #{inspect(Node.self() == lazy_node)}")
