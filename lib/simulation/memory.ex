@@ -1,4 +1,5 @@
 defmodule Simulation.Memory do
+  require Logger
   import Bitwise
   @control_bits 5
   @present 0b00001
@@ -20,7 +21,13 @@ defmodule Simulation.Memory do
     run(reference_list, 3, 5, 1024)
   end
 
-  def run(reference_list, memory_size, virtual_size, page_size) do
+  def run(reference_list, _memory_size, _virtual_size, _page_size) do
+    memory_size = Application.get_env(:simulation, :memoria)[:memory_size]
+    virtual_size = Application.get_env(:simulation, :memoria)[:virtual_size]
+    page_size = Application.get_env(:simulation, :memoria)[:page_size]
+    Logger.debug("Memory Size: #{memory_size}")
+    Logger.debug("Virtual Size: #{virtual_size}")
+    Logger.debug("Page Size: #{page_size}")
     memory = Enum.map(0..(memory_size - 1), fn _ -> -1 end)
     page_table = Enum.map(0..(virtual_size - 1), fn _ -> 0 end)
     # log base 2 of page_size
