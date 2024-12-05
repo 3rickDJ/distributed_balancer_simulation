@@ -12,7 +12,10 @@ defmodule Simulation.Worker do
   end
 
   def init(_init_arg) do
-    state = %{status: :free, queue: Qex.new(), program: nil, workload: 0}
+    memory_size = Application.get_env(:simulation, :memoria)[:memory_size]
+    virtual_size = Application.get_env(:simulation, :memoria)[:virtual_size]
+    page_size = Application.get_env(:simulation, :memoria)[:page_size]
+    state = %{status: :free, queue: Qex.new(), program: nil, workload: 0, memory_size: memory_size, virtual_size: virtual_size, page_size: page_size}
     {:ok, state}
   end
 
@@ -26,14 +29,24 @@ defmodule Simulation.Worker do
     GenServer.call(__MODULE__, :get_state)
   end
 
-  def force_append_work(name, references, frames, pages, page_size) do
-    program = Program.new(name, references, frames, pages, page_size)
+  def change_virtual_size(virtual_size) do
+    GenServer.call(__MODULE__, {:change_virtual_size, virtual_size})
+  end
+
+  def handle_call({:change_virtual_size, new_size}, _from, state) do
+    Logger.debug("Changing virtual size to: #{new_size}")
+    new_state = %{state | virtual_size: new_size}
+    {:reply, new_state, new_state}
+  end
+
+  def force_append_work(name, references, pages) do
+    program = Program.new(name, references, pages)
     Logger.debug("Forcing work: #{inspect(program)}")
     GenServer.cast(__MODULE__, {:schedule_force, program})
   end
 
-  def append_work(name, references, frames, pages, page_size) do
-    program = Program.new(name, references, frames, pages, page_size)
+  def append_work(name, references, pages) do
+    program = Program.new(name, references, pages)
     append_work(program)
   end
 
@@ -75,6 +88,7 @@ defmodule Simulation.Worker do
 
     lazy_node =
       success
+      |> Enum.concat([{Node.self(), state}])
       |> Enum.sort(fn {k1, %{workload: workload1}}, {k2, %{workload: workload2}} ->
         if workload1 == workload2 do
           k1 >= k2
@@ -82,10 +96,11 @@ defmodule Simulation.Worker do
           workload1 <= workload2
         end
       end)
-      |> Enum.map(fn {from, %{workload: workload}} -> {from, workload} end)
-      |> Enum.map(fn e ->
+      |> Enum.map(fn {from, %{workload: workload, virtual_size: virtual_size}} -> {from, workload, virtual_size} end)
+      |> Enum.filter(fn {_from, _workload, virtual_size} ->  virtual_size >= program.pages end)
+      |> Enum.map(fn {from, workload, _virtual_size} = e ->
         Logger.debug("node, workload: #{inspect(e)}")
-        e
+        {from, workload}
       end)
       |> Enum.at(0)
 
@@ -125,7 +140,9 @@ defmodule Simulation.Worker do
             after
               send(__MODULE__, {:task_done, program})
               %{from_node: node} = program
-              send({__MODULE__, node}, {:task_done, Node.self(), program})
+              if node != Node.self() do
+                send({__MODULE__, node}, {:task_done, Node.self(), program})
+              end
             end
           end)
 
@@ -140,8 +157,7 @@ defmodule Simulation.Worker do
   end
 
   def handle_info({:task_done, %Program{} = program}, state) do
-    IO.puts("Task done for program: #{inspect(program)}")
-    Logger.info("Task done for program: #{program.name}")
+    Logger.info("Task done for program: #{inspect(program)}")
     workload = state.workload - Enum.count(program.references)
     state = %{state | status: :free, workload: workload}
     send(__MODULE__, {:check_queue})
@@ -149,8 +165,7 @@ defmodule Simulation.Worker do
   end
 
   def handle_info({:task_done, from, %Program{} = program}, state) do
-    Logger.info("Task done for program: #{program.name} from: #{inspect(from)}")
-    Logger.debug("Task done for program: #{inspect(program)}")
+    Logger.info("Task done for program: #{inspect(program.name)} from: #{inspect(from)}")
     {:noreply, state}
   end
 end
