@@ -9,19 +9,19 @@ defmodule Simulation.Memory do
   # @cache_disabled 0b10000
 
 
-  def run() do
-    run([0, 4, 1, 4, 2, 4, 3, 4, 2, 4, 0, 4, 1, 4, 2, 4, 3, 4], 3, 5, 1024)
-  end
+  # def run() do
+  #   run([0, 4, 1, 4, 2, 4, 3, 4, 2, 4, 0, 4, 1, 4, 2, 4, 3, 4], 3, 5, 1024)
+  # end
 
   def run(%Simulation.Program{} = program) do
-    run(program.references, program.frames, program.pages, program.page_size)
+    run(program.references)
   end
+
+  # def run(reference_list) do
+  #   run(reference_list, 3, 5, 1024)
+  # end
 
   def run(reference_list) do
-    run(reference_list, 3, 5, 1024)
-  end
-
-  def run(reference_list, _memory_size, _virtual_size, _page_size) do
     memory_size = Application.get_env(:simulation, :memoria)[:memory_size]
     virtual_size = Application.get_env(:simulation, :memoria)[:virtual_size]
     page_size = Application.get_env(:simulation, :memoria)[:page_size]
