@@ -104,18 +104,21 @@ defmodule Simulation.Worker do
       end)
       |> Enum.at(0)
 
-    lazy_node =
-      if elem(lazy_node, 1) >= workload do
-        Node.self()
-      else
-        elem(lazy_node, 0)
-      end
+    if nil == lazy_node do
+      Logger.debug("No node found suitable for this program, skipping it.")
+      {:noreply, state}
+    else
+      lazy_node =
+        if elem(lazy_node, 1) >= workload do
+          Node.self()
+        else
+          elem(lazy_node, 0)
+        end
 
-    Logger.debug("Lazy node: #{inspect(lazy_node)}")
-    Logger.debug("Lazy node is the same one: #{inspect(Node.self() == lazy_node)}")
-
-    GenServer.cast({__MODULE__, lazy_node}, {:schedule_force, program})
-    {:noreply, state}
+      Logger.debug("Lazy node: #{inspect(lazy_node)}, is the same as this node: #{inspect(Node.self() == lazy_node)}")
+      GenServer.cast({__MODULE__, lazy_node}, {:schedule_force, program})
+      {:noreply, state}
+    end
   end
 
   def handle_info({:check_queue}, state) do
