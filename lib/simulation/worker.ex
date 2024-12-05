@@ -57,7 +57,7 @@ defmodule Simulation.Worker do
         workload: workload
     }
 
-    Process.send_after(self(), {:check_queue}, 0)
+    Process.send_after(self(), {:check_queue}, 20)
     {:noreply, new_state}
   end
 
@@ -89,11 +89,12 @@ defmodule Simulation.Worker do
       end)
       |> Enum.at(0)
 
-    lazy_node = if elem(lazy_node, 1) >= workload do
-      Node.self()
-    else
-      elem(lazy_node, 0)
-    end
+    lazy_node =
+      if elem(lazy_node, 1) >= workload do
+        Node.self()
+      else
+        elem(lazy_node, 0)
+      end
 
     Logger.debug("Lazy node: #{inspect(lazy_node)}")
     Logger.debug("Lazy node is the same one: #{inspect(Node.self() == lazy_node)}")
@@ -115,10 +116,17 @@ defmodule Simulation.Worker do
           new_state = %{state | status: :busy, program: program.name, queue: q}
 
           spawn(fn ->
-            Memory.run(program)
-            send(__MODULE__, {:task_done, program})
-            %{from_node: node} = program
-            send({__MODULE__, node}, {:task_done, Node.self, program})
+            try do
+              Memory.run(program)
+            rescue
+              e ->
+                Logger.error("Error running program: #{program.name}")
+                Logger.error("Error: #{inspect(e)}")
+            after
+              send(__MODULE__, {:task_done, program})
+              %{from_node: node} = program
+              send({__MODULE__, node}, {:task_done, Node.self(), program})
+            end
           end)
 
           {:noreply, new_state}
